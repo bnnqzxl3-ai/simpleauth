@@ -1,0 +1,96 @@
+# SimpleAuth — регистрация на Fabric-сервере 1.21.1
+
+Серверный мод: пока игрок не вошёл, он заморожен на месте, ослеплён, неуязвим,
+не может ломать/ставить блоки, бить мобов, писать в чат, трогать инвентарь
+и выполнять любые команды кроме `/register` и `/login`.
+
+Пароли хранятся только в виде PBKDF2-хеша (120 000 итераций, HmacSHA256) со случайной солью.
+
+## Команды
+
+| Команда | Описание |
+|---|---|
+| `/register <пароль> <пароль>` | регистрация (алиас `/reg`) |
+| `/login <пароль>` | вход (алиас `/l`) |
+| `/changepassword <старый> <новый>` | смена пароля |
+| `/simpleauth info` | сколько аккаунтов в базе (оператор 3) |
+| `/simpleauth unregister <ник>` | удалить аккаунт (оператор 3) |
+| `/simpleauth reload` | перечитать конфиг и базу (оператор 3) |
+
+## Как собрать .jar
+
+### Вариант A — через GitHub (ничего не надо ставить на комп)
+
+1. Создай новый репозиторий на GitHub.
+2. Залей туда всё содержимое этой папки.
+3. Вкладка **Actions** → workflow `build` запустится сам (или нажми *Run workflow*).
+4. Когда закончится — внизу страницы запуска скачай артефакт **simpleauth-jar**.
+5. Внутри архива нужен файл `simpleauth-1.0.0.jar` (файл `-sources.jar` не нужен).
+
+### Вариант B — локально
+
+Нужен JDK 21 и Gradle 8.x:
+
+```bash
+gradle build
+```
+
+Готовый файл появится в `build/libs/simpleauth-1.0.0.jar`.
+
+Если у тебя есть Gradle — можно один раз выполнить `gradle wrapper`, тогда дальше
+работает `./gradlew build` без установленного Gradle.
+
+## Установка на хостинг
+
+1. На сервере должно быть **ядро Fabric 1.21.1** (в панели хостинга: Server Type →
+   Fabric, версия 1.21.1). Если сервер сейчас Vanilla/Paper — переключи на Fabric.
+2. В папку `mods/` загрузи два файла:
+   - `fabric-api-0.115.1+1.21.1.jar` — скачать с Modrinth (Fabric API для 1.21.1);
+   - `simpleauth-1.0.0.jar` — твой мод.
+3. Перезапусти сервер.
+4. При первом запуске создастся `config/simpleauth/config.json`, база аккаунтов —
+   `config/simpleauth/players.json`.
+
+В логе при старте должно быть: `[SimpleAuth] Мод загружен.`
+
+### Важно про offline-mode
+
+Мод имеет смысл, если в `server.properties` стоит `online-mode=false`
+(пиратский вход). Аккаунты привязаны к нику, поэтому обязательно поставь также:
+
+```
+online-mode=false
+enforce-secure-profile=false
+```
+
+При `online-mode=true` Mojang уже проверяет игроков, и регистрация не нужна.
+
+## Настройки (`config/simpleauth/config.json`)
+
+```json
+{
+  "loginTimeoutSeconds": 60,
+  "minPasswordLength": 4,
+  "maxPasswordLength": 32,
+  "maxLoginAttempts": 3,
+  "blindnessUntilLogin": true,
+  "invulnerableUntilLogin": true,
+  "muteChatUntilLogin": true,
+  "reminderIntervalSeconds": 5,
+  "messages": { "...": "все тексты можно переписать под себя" }
+}
+```
+
+После правки — `/simpleauth reload` или рестарт.
+
+## Резервные копии
+
+`config/simpleauth/players.json` — единственный файл с аккаунтами. Копируй его,
+если переезжаешь на другой хостинг.
+
+## Если при старте ошибка миксина
+
+В редком случае несовпадения версий сервер может ругаться на
+`ServerPlayNetworkHandlerMixin`. Тогда открой `src/main/resources/simpleauth.mixins.json`,
+очисти список `"mixins": []` и пересобери — мод продолжит работать, но команды
+до входа перестанут блокироваться (остальная защита сохранится).
