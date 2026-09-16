@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "ru.simpleauth.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ServerPlayNetworkHandlerMixin",
+    "ServerCommandSourceMixin",
+    "WorldMixin",
+    "LeavesBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
