@@ -21,6 +21,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,9 +52,41 @@ public class AiCompanion {
     private float pitch;
     private int idleTicks;
 
+    private String goal = "";
+    private String pendingEvent;
+    private long lastThink;
+
     public AiCompanion(SessionManager manager) {
         this.manager = manager;
-        this.brain = new AiBrain(manager);
+        this.brain = new AiBrain(manager, this);
+    }
+
+    public FakePlayer entity() {
+        return npc;
+    }
+
+    public ServerWorld currentWorld() {
+        return world;
+    }
+
+    public double x() {
+        return npc == null ? 0.0 : npc.getX();
+    }
+
+    public double y() {
+        return npc == null ? 0.0 : npc.getY();
+    }
+
+    public double z() {
+        return npc == null ? 0.0 : npc.getZ();
+    }
+
+    public String goal() {
+        return goal;
+    }
+
+    public void setGoal(String value) {
+        goal = value == null ? "" : value.trim();
     }
 
     public AiBrain brain() {
@@ -187,6 +220,58 @@ public class AiCompanion {
             broadcast(server, new EntityPositionS2CPacket(npc));
             broadcast(server, new EntitySetHeadYawS2CPacket(npc, angleByte(yaw)));
         }
+
+        maybeThink(server, online);
+    }
+
+    /** Игрок зашёл — повод поздороваться, но не чаще, чем разрешает конфиг. */
+    public void onPlayerJoined(ServerPlayerEntity player) {
+        if (npc == null) return;
+        pendingEvent = "На сервер зашёл " + player.getGameProfile().getName() + ".";
+    }
+
+    /**
+     * Самостоятельный ход. Дёргаем его только когда есть повод: кто-то рядом,
+     * что-то случилось или у NPC незакрытое дело — иначе это просто трата денег.
+     */
+    private void maybeThink(MinecraftServer server, List<ServerPlayerEntity> online) {
+        ServerSettings cfg = manager.config();
+        if (!cfg.aiAutonomous || brain.busy()) return;
+
+        long now = System.currentTimeMillis();
+        String event = pendingEvent;
+        long wait = (event != null ? cfg.aiEventCooldownSeconds : cfg.aiThinkIntervalSeconds) * 1000L;
+        if (now - lastThink < wait) return;
+
+        List<ServerPlayerEntity> nearby = new ArrayList<>();
+        for (ServerPlayerEntity player : online) {
+            if (player.getServerWorld() != world) continue;
+            double radius = cfg.aiHearRadius * 2;
+            if (player.squaredDistanceTo(npc.getX(), npc.getY(), npc.getZ()) <= radius * radius) {
+                nearby.add(player);
+            }
+        }
+        if (event == null && nearby.isEmpty() && goal.isEmpty()) return;
+
+        pendingEvent = null;
+        lastThink = now;
+        brain.think(server, event != null ? event : situation(nearby));
+    }
+
+    private String situation(List<ServerPlayerEntity> nearby) {
+        StringBuilder text = new StringBuilder();
+        long time = world.getTimeOfDay() % 24000L;
+        text.append(time > 12500L && time < 23000L ? "Ночь. " : "День. ");
+        if (nearby.isEmpty()) {
+            text.append("Рядом никого нет. ");
+        } else {
+            List<String> names = new ArrayList<>();
+            for (ServerPlayerEntity player : nearby) names.add(player.getGameProfile().getName());
+            text.append("Рядом: ").append(String.join(", ", names)).append(". ");
+        }
+        if (!goal.isEmpty()) text.append("Ты занят делом: ").append(goal).append(". ");
+        text.append("Реши, надо ли сейчас что-то сделать или сказать. Если нет — заверши ход молча.");
+        return text.toString();
     }
 
     private ServerPlayerEntity nearest(List<ServerPlayerEntity> online) {
@@ -257,9 +342,11 @@ public class AiCompanion {
         if (last != null && now - last < cfg.aiCooldownSeconds * 1000L) return;
         lastAsk.put(sender.getUuid(), now);
 
-        MinecraftServer server = sender.getServer();
-        brain.ask(sender.getUuid(), sender.getGameProfile().getName(), message,
-                answer -> say(server, answer));
+        brain.ask(sender.getServer(), sender.getGameProfile().getName(), message);
+    }
+
+    public void swing(MinecraftServer server) {
+        if (npc != null) broadcast(server, new EntityAnimationS2CPacket(npc, 0));
     }
 
     public void say(MinecraftServer server, String raw) {
@@ -271,8 +358,7 @@ public class AiCompanion {
                 .append(Text.literal("> ").formatted(Formatting.DARK_GRAY))
                 .append(Text.literal(text).formatted(Formatting.WHITE));
         server.getPlayerManager().broadcast(line, false);
-
-        if (npc != null) broadcast(server, new EntityAnimationS2CPacket(npc, 0));
+        swing(server);
     }
 
     /**

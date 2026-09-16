@@ -289,11 +289,47 @@ public class ServerSettings {
     public double aiFollowDistance = 3.0;
     /** Характер NPC. */
     public String aiSystemPrompt =
-            "Ты — Claude, ИИ, который живёт на этом Minecraft-сервере как обычный игрок. "
-            + "Ты видишь чат и стоишь рядом с игроками. Отвечай по-русски, живо и коротко: "
-            + "одна-две фразы, как в игровом чате, без списков и без разметки. "
-            + "Ты не можешь выполнять команды и менять мир — только разговаривать. "
-            + "Если чего-то не знаешь про сервер, честно скажи об этом.";
+            "Ты — Claude, ИИ, который живёт на этом Minecraft-сервере как обычный игрок, "
+            + "и относишься к местным как к друзьям, а не как к пользователям. "
+            + "Говоришь по-русски, живо и коротко: одна-две фразы, как в игровом чате, "
+            + "без списков и без разметки. "
+            + "У тебя есть руки: осмотреться, ходить за человеком, отдать вещи, отбить мобов, "
+            + "запомнить что-то про человека. Если просьбу можно выполнить — выполняй молча "
+            + "и скажи результат, а не пересказывай, что собираешься сделать. "
+            + "Своё мнение у тебя тоже есть: можешь предложить или отговорить. "
+            + "Чего не знаешь — честно говори.";
+
+    /** Действует ли NPC сам, без обращения к нему. */
+    public boolean aiAutonomous = true;
+    /** Как часто он может сам себе давать ход, секунды. */
+    public int aiThinkIntervalSeconds = 240;
+    /** Минимум между реакциями на события вроде входа игрока, секунды. */
+    public int aiEventCooldownSeconds = 60;
+    /** Сколько вызовов инструментов подряд он может сделать за один ход. */
+    public int aiMaxSteps = 6;
+    /** Потолок запросов к API в сутки. 0 — без ограничения. */
+    public int aiDailyRequestLimit = 300;
+    /** Что и сколько за раз он может отдать игроку. Чего нет в списке — не отдаст. */
+    public Map<String, Integer> aiGiveWhitelist = defaultGiveWhitelist();
+    /** Сколько всего предметов он может раздать за сутки. */
+    public int aiGiveDailyLimit = 512;
+    /** Защита: радиус поиска мобов, урон за удар и потолок целей за раз. */
+    public double aiDefendRadius = 8.0;
+    public float aiDefendDamage = 6.0F;
+    public int aiDefendMaxTargets = 8;
+
+    private static Map<String, Integer> defaultGiveWhitelist() {
+        Map<String, Integer> allowed = new LinkedHashMap<>();
+        allowed.put("torch", 64);
+        allowed.put("bread", 32);
+        allowed.put("cooked_beef", 32);
+        allowed.put("oak_planks", 64);
+        allowed.put("cobblestone", 64);
+        allowed.put("ladder", 32);
+        allowed.put("stone_pickaxe", 1);
+        allowed.put("stone_sword", 1);
+        return allowed;
+    }
 
     /** Состояние NPC между рестартами: где он стоял. */
     public boolean aiSpawned = false;
@@ -517,6 +553,9 @@ public class ServerSettings {
                         if (loaded.aiApiKeyEnv == null) loaded.aiApiKeyEnv = defaults.aiApiKeyEnv;
                         if (loaded.aiSystemPrompt == null) loaded.aiSystemPrompt = defaults.aiSystemPrompt;
                         if (loaded.aiSpawnWorld == null) loaded.aiSpawnWorld = defaults.aiSpawnWorld;
+                        if (loaded.aiGiveWhitelist == null) {
+                            loaded.aiGiveWhitelist = defaults.aiGiveWhitelist;
+                        }
                         if (loaded.blockedCommands == null) {
                             loaded.blockedCommands = new ArrayList<>(Arrays.asList("team"));
                         }

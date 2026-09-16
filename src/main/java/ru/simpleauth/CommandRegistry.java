@@ -1158,10 +1158,37 @@ public class CommandRegistry {
                                 }))
                         .then(CommandManager.literal("forget")
                                 .executes(ctx -> {
-                                    manager.ai().brain().forgetAll();
-                                    feedback(ctx, "Память разговоров очищена.", Formatting.GRAY);
+                                    manager.ai().brain().forgetConversation();
+                                    feedback(ctx, "Разговор забыт. Факты о людях остались.",
+                                            Formatting.GRAY);
                                     return 1;
-                                }))
+                                })
+                                .then(CommandManager.argument("player", StringArgumentType.word())
+                                        .executes(ctx -> {
+                                            String name = StringArgumentType.getString(ctx, "player");
+                                            manager.ai().brain().notes().forget(name);
+                                            feedback(ctx, "Забыл всё про " + name + ".", Formatting.GRAY);
+                                            return 1;
+                                        })))
+                        .then(CommandManager.literal("notes")
+                                .then(CommandManager.argument("player", StringArgumentType.word())
+                                        .executes(ctx -> {
+                                            String name = StringArgumentType.getString(ctx, "player");
+                                            List<String> known = manager.ai().brain().notes().get(name);
+                                            feedback(ctx, known.isEmpty()
+                                                            ? "Про " + name + " ничего не помнит."
+                                                            : name + ": " + String.join("; ", known),
+                                                    Formatting.AQUA);
+                                            return 1;
+                                        })))
+                        .then(CommandManager.literal("goal")
+                                .then(CommandManager.argument("text", StringArgumentType.greedyString())
+                                        .executes(ctx -> {
+                                            String goal = StringArgumentType.getString(ctx, "text");
+                                            manager.ai().setGoal(goal.equalsIgnoreCase("clear") ? "" : goal);
+                                            feedback(ctx, "Дело записано.", Formatting.GREEN);
+                                            return 1;
+                                        })))
                         .then(CommandManager.literal("say")
                                 .then(CommandManager.argument("text", StringArgumentType.greedyString())
                                         .executes(ctx -> {
@@ -1169,7 +1196,8 @@ public class CommandRegistry {
                                                     StringArgumentType.getString(ctx, "text"));
                                             return 1;
                                         })))
-                        .executes(ctx -> usage(ctx, "/ai spawn|despawn|come|follow|stay|forget|say <текст>"))));
+                        .executes(ctx -> usage(ctx,
+                                "/ai spawn|despawn|come|follow|stay|goal <текст>|notes <ник>|forget [ник]|say <текст>"))));
     }
 
     private static ServerPlayerEntity playerOf(CommandContext<ServerCommandSource> ctx) {

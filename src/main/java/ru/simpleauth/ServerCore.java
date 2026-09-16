@@ -39,8 +39,10 @@ public class ServerCore implements DedicatedServerModInitializer {
 
         CommandRegistry.register(manager);
 
-        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) ->
-                manager.onJoin(handler.player));
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            manager.onJoin(handler.player);
+            manager.ai().onPlayerJoined(handler.player);
+        });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
                 manager.onDisconnect(handler.player));
