@@ -72,6 +72,7 @@ public class CommandRegistry {
         registerLeaves(manager);
         registerPhysics(manager);
         registerDeathTest(manager);
+        registerAi(manager);
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
 
             // /register <пароль> <пароль>
@@ -1092,6 +1093,90 @@ public class CommandRegistry {
             player.sendMessage(text, false);
         } else {
             ctx.getSource().sendFeedback(() -> text, false);
+        }
+    }
+
+    /** /ai — управление ИИ-компаньоном. Разговаривать с ним можно просто в чате. */
+    private static void registerAi(SessionManager manager) {
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
+                dispatcher.register(CommandManager.literal("ai")
+                        .requires(source -> source.hasPermissionLevel(2)
+                                && manager.config().aiEnabled)
+                        .then(CommandManager.literal("spawn")
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = playerOf(ctx);
+                                    if (player == null) {
+                                        feedback(ctx, "Команда доступна только игроку.", Formatting.RED);
+                                        return 0;
+                                    }
+                                    AiCompanion ai = manager.ai();
+                                    Vec3d dir = player.getRotationVec(1.0F);
+                                    ai.spawn(player.getServerWorld(),
+                                            player.getX() + dir.x * 2.0,
+                                            player.getY(),
+                                            player.getZ() + dir.z * 2.0,
+                                            player.getYaw() + 180.0F);
+                                    String hint = ai.brain().hasKey()
+                                            ? ai.name() + " здесь. Просто напиши ему в чат."
+                                            : ai.name() + " здесь, но ключа Claude API нет — он будет молчать.";
+                                    feedback(ctx, hint,
+                                            ai.brain().hasKey() ? Formatting.GREEN : Formatting.YELLOW);
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("despawn")
+                                .executes(ctx -> {
+                                    manager.ai().despawn(ctx.getSource().getServer());
+                                    feedback(ctx, "Компаньон убран.", Formatting.GRAY);
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("come")
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = playerOf(ctx);
+                                    if (player == null || !manager.ai().isSpawned()) {
+                                        feedback(ctx, "Компаньон не заспавнен.", Formatting.RED);
+                                        return 0;
+                                    }
+                                    manager.ai().teleportTo(player);
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("follow")
+                                .executes(ctx -> {
+                                    ServerPlayerEntity player = playerOf(ctx);
+                                    if (player == null || !manager.ai().isSpawned()) {
+                                        feedback(ctx, "Компаньон не заспавнен.", Formatting.RED);
+                                        return 0;
+                                    }
+                                    manager.ai().follow(player);
+                                    feedback(ctx, "Идёт за тобой.", Formatting.GREEN);
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("stay")
+                                .executes(ctx -> {
+                                    manager.ai().stay();
+                                    feedback(ctx, "Стоит на месте.", Formatting.GRAY);
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("forget")
+                                .executes(ctx -> {
+                                    manager.ai().brain().forgetAll();
+                                    feedback(ctx, "Память разговоров очищена.", Formatting.GRAY);
+                                    return 1;
+                                }))
+                        .then(CommandManager.literal("say")
+                                .then(CommandManager.argument("text", StringArgumentType.greedyString())
+                                        .executes(ctx -> {
+                                            manager.ai().say(ctx.getSource().getServer(),
+                                                    StringArgumentType.getString(ctx, "text"));
+                                            return 1;
+                                        })))
+                        .executes(ctx -> usage(ctx, "/ai spawn|despawn|come|follow|stay|forget|say <текст>"))));
+    }
+
+    private static ServerPlayerEntity playerOf(CommandContext<ServerCommandSource> ctx) {
+        try {
+            return ctx.getSource().getPlayer();
+        } catch (Exception e) {
+            return null;
         }
     }
 

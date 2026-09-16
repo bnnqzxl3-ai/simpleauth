@@ -2,6 +2,7 @@ package ru.simpleauth;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
@@ -45,6 +46,11 @@ public class ServerCore implements DedicatedServerModInitializer {
                 manager.onDisconnect(handler.player));
 
         ServerTickEvents.END_SERVER_TICK.register(server -> manager.tick(server));
+
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> manager.ai().restore(server));
+
+        ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) ->
+                manager.ai().onChat(sender, message.getSignedContent()));
 
         // --- запрет любых действий с миром до входа ---
 

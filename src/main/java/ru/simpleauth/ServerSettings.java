@@ -258,6 +258,51 @@ public class ServerSettings {
     /** Часовой пояс для расписания, например Europe/Warsaw, Europe/Kyiv. */
     public String timeZone = "Europe/Warsaw";
 
+    // --- ИИ-компаньон -------------------------------------------------------
+
+    /** Включён ли NPC целиком. Спавн всё равно ручной: /ai spawn. */
+    public boolean aiEnabled = true;
+    /** Ник NPC: он же имя в чате и в списке игроков. */
+    public String aiName = "Claude";
+    /** Скин: значение и подпись свойства textures (можно взять с mineskin.org). */
+    public String aiSkinValue = "";
+    public String aiSkinSignature = "";
+    /** Переменная окружения с ключом Claude API. */
+    public String aiApiKeyEnv = "ANTHROPIC_API_KEY";
+    /** Ключ прямо в конфиге — запасной вариант, если переменную задать негде. */
+    public String aiApiKey = "";
+    /** Модель и глубина размышлений: low держит ответы быстрыми и дешёвыми. */
+    public String aiModel = "claude-opus-5";
+    public String aiEffort = "low";
+    /** Потолок длины ответа в токенах: NPC говорит короткими репликами. */
+    public int aiMaxTokens = 300;
+    /** Пауза между вопросами одного игрока, секунды. */
+    public int aiCooldownSeconds = 5;
+    /** Сколько реплик разговора помнить на игрока (вопросы и ответы вместе). */
+    public int aiMemoryMessages = 12;
+    /** Радиус, в котором NPC слышит чат, блоки. */
+    public double aiHearRadius = 24.0;
+    /** Отвечать только когда в сообщении есть его имя. */
+    public boolean aiOnlyWhenNamed = true;
+    /** Шаг за тик и дистанция, на которой NPC останавливается, блоки. */
+    public double aiFollowSpeed = 0.18;
+    public double aiFollowDistance = 3.0;
+    /** Характер NPC. */
+    public String aiSystemPrompt =
+            "Ты — Claude, ИИ, который живёт на этом Minecraft-сервере как обычный игрок. "
+            + "Ты видишь чат и стоишь рядом с игроками. Отвечай по-русски, живо и коротко: "
+            + "одна-две фразы, как в игровом чате, без списков и без разметки. "
+            + "Ты не можешь выполнять команды и менять мир — только разговаривать. "
+            + "Если чего-то не знаешь про сервер, честно скажи об этом.";
+
+    /** Состояние NPC между рестартами: где он стоял. */
+    public boolean aiSpawned = false;
+    public String aiSpawnWorld = "minecraft:overworld";
+    public double aiSpawnX = 0.0;
+    public double aiSpawnY = 64.0;
+    public double aiSpawnZ = 0.0;
+    public float aiSpawnYaw = 0.0F;
+
     /** Шоу по расписанию. */
     public List<Show> shows = defaultShows();
 
@@ -466,6 +511,12 @@ public class ServerSettings {
                         if (loaded.hats == null) loaded.hats = new LinkedHashMap<>();
                         if (loaded.materials == null) loaded.materials = SupplyCache.defaults();
                         if (loaded.timeZone == null) loaded.timeZone = "Europe/Warsaw";
+                        ServerSettings defaults = new ServerSettings();
+                        if (loaded.aiName == null) loaded.aiName = defaults.aiName;
+                        if (loaded.aiModel == null) loaded.aiModel = defaults.aiModel;
+                        if (loaded.aiApiKeyEnv == null) loaded.aiApiKeyEnv = defaults.aiApiKeyEnv;
+                        if (loaded.aiSystemPrompt == null) loaded.aiSystemPrompt = defaults.aiSystemPrompt;
+                        if (loaded.aiSpawnWorld == null) loaded.aiSpawnWorld = defaults.aiSpawnWorld;
                         if (loaded.blockedCommands == null) {
                             loaded.blockedCommands = new ArrayList<>(Arrays.asList("team"));
                         }

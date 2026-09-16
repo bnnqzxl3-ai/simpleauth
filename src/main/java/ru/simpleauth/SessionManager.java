@@ -70,6 +70,7 @@ public class SessionManager {
     private final EventLogger actionLogger = new EventLogger(this);
     private final MovementMonitor anticheat = new MovementMonitor(this, actionLogger);
     private final DisplayEffectTask nicknameShimmer = new DisplayEffectTask(this);
+    private final AiCompanion ai = new AiCompanion(this);
     private final Map<String, Session> sessions = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<Scheduled> scheduled = new ConcurrentLinkedQueue<>();
 
@@ -190,6 +191,10 @@ public class SessionManager {
 
     public MovementMonitor anticheat() {
         return anticheat;
+    }
+
+    public AiCompanion ai() {
+        return ai;
     }
 
     public DisplayEffectTask nicknameShimmer() {
@@ -545,6 +550,7 @@ public class SessionManager {
         serverOptimizer.tick(server);
         anticheat.tick(server);
         nicknameShimmer.tick(server);
+        ai.tick(server);
         runScheduled(server);
         if (pending.isEmpty()) return;
 
