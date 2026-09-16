@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "simpleauth",
+  "version": "${version}",
+  "name": "SimpleAuth",
+  "description": "Регистрация и вход по паролю для Fabric-сервера 1.21.1",
+  "authors": [
+    "bnnqzxl3-ai"
+  ],
+  "license": "MIT",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "com.simpleauth.SimpleAuth"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.21",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
