@@ -3,6 +3,7 @@ package ru.simpleauth;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import net.fabricmc.fabric.api.entity.FakePlayer;
+import net.minecraft.entity.EntityType;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitiesDestroyS2CPacket;
 import net.minecraft.network.packet.s2c.play.EntityAnimationS2CPacket;
@@ -219,7 +220,11 @@ public class AiCompanion {
                 EnumSet.of(PlayerListS2CPacket.Action.ADD_PLAYER,
                         PlayerListS2CPacket.Action.UPDATE_LISTED),
                 List.of(npc)));
-        player.networkHandler.sendPacket(new EntitySpawnS2CPacket(npc));
+        player.networkHandler.sendPacket(new EntitySpawnS2CPacket(
+                npc.getId(), npc.getUuid(),
+                npc.getX(), npc.getY(), npc.getZ(),
+                npc.getPitch(), npc.getYaw(),
+                EntityType.PLAYER, 0, Vec3d.ZERO, npc.getHeadYaw()));
         player.networkHandler.sendPacket(new EntitySetHeadYawS2CPacket(npc, angleByte(yaw)));
     }
 
