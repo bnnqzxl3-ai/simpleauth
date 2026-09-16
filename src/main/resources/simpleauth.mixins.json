@@ -4,7 +4,9 @@
   "package": "ru.simpleauth.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ServerPlayNetworkHandlerMixin"
+    "ServerPlayNetworkHandlerMixin",
+    "WorldMixin",
+    "LeavesBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

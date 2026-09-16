@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "simpleauth",
   "version": "${version}",
-  "name": "SimpleAuth",
-  "description": "Регистрация и вход по паролю для Fabric-сервера 1.21.1",
+  "name": "Server Utilities",
+  "description": "Служебные утилиты для Fabric-сервера 1.21.1",
   "authors": [
     "you"
   ],
@@ -11,7 +11,7 @@
   "environment": "server",
   "entrypoints": {
     "server": [
-      "ru.simpleauth.SimpleAuth"
+      "ru.simpleauth.ServerCore"
     ]
   },
   "mixins": [
